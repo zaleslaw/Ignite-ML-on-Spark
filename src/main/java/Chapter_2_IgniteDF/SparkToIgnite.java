@@ -1,18 +1,15 @@
 package Chapter_2_IgniteDF;
 
-import java.util.List;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
-import org.apache.ignite.cache.query.SqlFieldsQuery;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.spark.IgniteDataFrameSettings;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
-
-public class LoadFromSpark {
+public class SparkToIgnite {
     private static final String CACHE_NAME = "testCache";
 
     /**
@@ -37,37 +34,32 @@ public class LoadFromSpark {
             .getOrCreate();
 
         Dataset<Row> ds = spark.read()
-            .option("delimiter", ";")
             .option("header", "true")
-            .csv("src/main/resources/titanic.csv");
-        ds.show();
-        ds.repartition(200);
+            .option("inferSchema", "true")
+            .option("charset", "windows-1251")
+            .option("delimiter", ";")
+            .csv("D:\\ds_large.txt");
 
-        ds.write().format(IgniteDataFrameSettings.FORMAT_IGNITE())
+        Dataset<Row> cached_ds = ds.cache();
+        Dataset<Row> filtered_ds = cached_ds.filter("id != 2");
+        filtered_ds.count();
+        filtered_ds.show();
+        //ds.repartition(200);
+        filtered_ds.write().format("csv").save("D:\\ds_large_2.txt");
+
+        filtered_ds.write().format(IgniteDataFrameSettings.FORMAT_IGNITE())
             .option(IgniteDataFrameSettings.OPTION_CONFIG_FILE(), CONFIG)
             .option(IgniteDataFrameSettings.OPTION_CREATE_TABLE_PRIMARY_KEY_FIELDS(), "id")
-            .option(IgniteDataFrameSettings.OPTION_TABLE(), "titanic")
-            .option(IgniteDataFrameSettings.OPTION_CREATE_TABLE_PARAMETERS(), "backups=1, template=replicated")
-            .mode("append")
+            .option(IgniteDataFrameSettings.OPTION_TABLE(), "LARGE_TABLE")
+            .option(IgniteDataFrameSettings.OPTION_CREATE_TABLE_PARAMETERS(), "template=replicated")
             .save();
 
-        //Reading saved data from Ignite.
-        List<List<?>> data = cache.query(new SqlFieldsQuery("SELECT id, sex FROM titanic")).getAll();
-        System.out.println(data);
-
-        Dataset<Row> df = spark.read()
+        Dataset<Row> df2 = spark.read()
             .format(IgniteDataFrameSettings.FORMAT_IGNITE()) //Data source type.
-            .option(IgniteDataFrameSettings.OPTION_TABLE(), "titanic") //Table to read.
+            .option(IgniteDataFrameSettings.OPTION_TABLE(), "LARGE_TABLE") //Table to read.
             .option(IgniteDataFrameSettings.OPTION_CONFIG_FILE(), CONFIG) //Ignite config.
             .load();
-
-        //Registering DataFrame as Spark view.
-        df.createOrReplaceTempView("titanic");
-
-        //Selecting data from Ignite through Spark SQL Engine.
-        Dataset<Row> igniteDF = spark.sql("SELECT COUNT(*) FROM titanic WHERE id >= 2 AND sex = 'male'");
-        igniteDF.show();
-        igniteDF.explain(true);
+        System.out.println(df2.count());
 
         Thread.sleep(100000);
 

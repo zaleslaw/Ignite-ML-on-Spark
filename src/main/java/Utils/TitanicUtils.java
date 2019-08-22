@@ -27,6 +27,7 @@ import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
 import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.spark.IgniteDataFrameSettings;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -83,7 +84,7 @@ public class TitanicUtils {
      * @param ignite Ignite instance.
      * @return Filled Ignite Cache.
      */
-    private static IgniteCache<Integer, Object[]> getCache(Ignite ignite) {
+    public static IgniteCache<Integer, Object[]> getCache(Ignite ignite) {
 
         CacheConfiguration<Integer, Object[]> cacheConfiguration = new CacheConfiguration<>();
         cacheConfiguration.setName("TUTORIAL_" + UUID.randomUUID());
@@ -126,9 +127,27 @@ public class TitanicUtils {
         return cache;
     }
 
-    public static IgniteCache<Integer, Object[]> loadFromSparkEffectively(Ignite ignite) {
+    public static void loadToIgniteDF() {
 
-        return null;
+        SparkSession spark = SparkSession
+            .builder()
+            .appName("SparkForIgnite")
+            .master("local")
+            .config("spark.executor.instances", "2")
+            .getOrCreate();
+
+        Dataset<Row> ds = spark.read()
+            .option("delimiter", ";")
+            .option("header", "true")
+            .csv("src/main/resources/titanic.csv");
+        ds.show();
+
+        ds.write().format(IgniteDataFrameSettings.FORMAT_IGNITE())
+            .option(IgniteDataFrameSettings.OPTION_CONFIG_FILE(), "config/example-ignite.xml")
+            .option(IgniteDataFrameSettings.OPTION_CREATE_TABLE_PRIMARY_KEY_FIELDS(), "id")
+            .option(IgniteDataFrameSettings.OPTION_TABLE(), "titanic")
+            .mode("overwrite")
+            .save();
     }
 
     public static IgniteCache<Integer, Object[]> loadFromSparkViaLoadCache(Ignite ignite) {

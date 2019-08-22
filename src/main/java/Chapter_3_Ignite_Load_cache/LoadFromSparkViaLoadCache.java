@@ -15,7 +15,7 @@ import static Chapter_3_Ignite_Load_cache.Utils.getCache;
 
 public class LoadFromSparkViaLoadCache {
     /** Run example. */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         try (Ignite ignite = Ignition.start()) {
             IgniteCache<Integer, Object[]> dataCache = getCache(ignite);
 
@@ -54,6 +54,10 @@ public class LoadFromSparkViaLoadCache {
 
             System.out.println("\n>>> Accuracy " + accuracy);
             System.out.println("\n>>> Test Error " + (1 - accuracy));
+
+            while (true) {
+
+            }
         }
     }
 }
