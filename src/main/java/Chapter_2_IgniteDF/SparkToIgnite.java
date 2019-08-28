@@ -7,7 +7,9 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.spark.IgniteDataFrameSettings;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.storage.StorageLevel;
 
 public class SparkToIgnite {
     private static final String CACHE_NAME = "testCache";
@@ -40,19 +42,32 @@ public class SparkToIgnite {
             .option("delimiter", ";")
             .csv("D:\\ds_large.txt");
 
-        Dataset<Row> cached_ds = ds.cache();
-        Dataset<Row> filtered_ds = cached_ds.filter("id != 2");
-        filtered_ds.count();
-        filtered_ds.show();
-        //ds.repartition(200);
-        filtered_ds.write().format("csv").save("D:\\ds_large_2.txt");
+        Dataset<Row> filtered_ds = ds;
+        Dataset<Row> newds = ds.repartition(200);
+        //.filter("id != 2")
+        //.select("id", "BUSINESS_UNIT", "JOURNAL_DATE")
+        //.sort("BUSINESS_UNIT", "JOURNAL_DATE");
+        newds.persist(StorageLevel.MEMORY_ONLY());
+        newds.count();
+        //newds.write().format("parquet").mode(SaveMode.Overwrite).save("D:\\ds_large_5.txt");
 
-        filtered_ds.write().format(IgniteDataFrameSettings.FORMAT_IGNITE())
+        newds.write().format(IgniteDataFrameSettings.FORMAT_IGNITE())
             .option(IgniteDataFrameSettings.OPTION_CONFIG_FILE(), CONFIG)
             .option(IgniteDataFrameSettings.OPTION_CREATE_TABLE_PRIMARY_KEY_FIELDS(), "id")
             .option(IgniteDataFrameSettings.OPTION_TABLE(), "LARGE_TABLE")
             .option(IgniteDataFrameSettings.OPTION_CREATE_TABLE_PARAMETERS(), "template=replicated")
+            .mode(SaveMode.Append)
             .save();
+
+        newds.write().format(IgniteDataFrameSettings.FORMAT_IGNITE())
+            .option(IgniteDataFrameSettings.OPTION_CONFIG_FILE(), CONFIG)
+            .option(IgniteDataFrameSettings.OPTION_CREATE_TABLE_PRIMARY_KEY_FIELDS(), "id")
+            .option(IgniteDataFrameSettings.OPTION_TABLE(), "LARGE_TABLE")
+            .option(IgniteDataFrameSettings.OPTION_CREATE_TABLE_PARAMETERS(), "template=replicated")
+            .mode(SaveMode.Append)
+            .save();
+
+       /* filtered_ds.explain(true);
 
         Dataset<Row> df2 = spark.read()
             .format(IgniteDataFrameSettings.FORMAT_IGNITE()) //Data source type.
@@ -60,6 +75,8 @@ public class SparkToIgnite {
             .option(IgniteDataFrameSettings.OPTION_CONFIG_FILE(), CONFIG) //Ignite config.
             .load();
         System.out.println(df2.count());
+
+        df2.explain(true);*/
 
         Thread.sleep(100000);
 

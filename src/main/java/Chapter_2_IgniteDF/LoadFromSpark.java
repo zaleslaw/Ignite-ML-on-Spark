@@ -41,9 +41,9 @@ public class LoadFromSpark {
             .option("header", "true")
             .csv("src/main/resources/titanic.csv");
         ds.show();
-        ds.repartition(200);
+        Dataset<Row> newds = ds.repartition(200);
 
-        ds.write().format(IgniteDataFrameSettings.FORMAT_IGNITE())
+        newds.write().format(IgniteDataFrameSettings.FORMAT_IGNITE())
             .option(IgniteDataFrameSettings.OPTION_CONFIG_FILE(), CONFIG)
             .option(IgniteDataFrameSettings.OPTION_CREATE_TABLE_PRIMARY_KEY_FIELDS(), "id")
             .option(IgniteDataFrameSettings.OPTION_TABLE(), "titanic")
