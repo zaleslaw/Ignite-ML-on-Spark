@@ -1,4 +1,4 @@
-package Chapter_2_IgniteDF;
+package Chapter_2_IgniteDF.titanic;
 
 import java.util.List;
 import org.apache.ignite.Ignite;
@@ -11,8 +11,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
-
-public class LoadFromSpark {
+public class LoadTitanicFromSpark {
     private static final String CACHE_NAME = "testCache";
 
     /**
