@@ -65,18 +65,15 @@ public class DuplicationOfIgniteQueries {
                 .where("DEPTID != 'DEPTID2'")
                 .sort("DEPTID", "BUSINESS_UNIT");
 
-        filteredRightDF.persist(StorageLevel.MEMORY_ONLY());
         filteredRightDF.show();
-        System.out.println(filteredRightDF.count());
 
         //Registering DataFrame as Spark view.
         rightDF.createOrReplaceTempView("GREAT_TABLE");
 
         //Selecting data from Ignite through Spark SQL Engine.
-        Dataset<Row> result = spark.sql("SELECT ID, PRODUCT, ACCOUNT FROM GREAT_TABLE ORDER BY ACCOUNT");
+        Dataset<Row> result = spark.sql("SELECT PRODUCT, AVG(ACCOUNT) FROM GREAT_TABLE GROUP BY PRODUCT");
 
-        System.out.println("Result SQL count " + result.count());
-        result.show(100);
-        result.explain(true);
+        System.out.println("Result SQL");
+        result.show();
     }
 }
