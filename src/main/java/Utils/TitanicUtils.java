@@ -15,14 +15,6 @@ package Utils;/*
  * limitations under the License.
  */
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.List;
-import java.util.Locale;
-import java.util.Scanner;
-import java.util.UUID;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.affinity.rendezvous.RendezvousAffinityFunction;
@@ -32,6 +24,15 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Scanner;
+import java.util.UUID;
 
 /**
  * The utility class.
@@ -148,9 +149,5 @@ public class TitanicUtils {
             .option(IgniteDataFrameSettings.OPTION_TABLE(), "titanic")
             .mode("overwrite")
             .save();
-    }
-
-    public static IgniteCache<Integer, Object[]> loadFromSparkViaLoadCache(Ignite ignite) {
-        return null;
     }
 }
